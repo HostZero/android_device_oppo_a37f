@@ -1,0 +1,248 @@
+##################################################################################
+### VENDOR_EDIT, OPPO All rights reserved.
+### 
+### File: - init.oppo.debug.nosd.rc
+### Author: Jason.Lee@OnlineRd.Framework
+### 
+### ------------------------------- Revision History: ----------------------------
+### <author>                        <data>       <version>   <desc>
+### ------------------------------------------------------------------------------
+### Jason.Lee@OnlineRd.Framework   2014-03-18               Create this file
+##################################################################################
+
+#ifdef VENDOR_EDIT
+#yanbin@OnlineRd.framework.oppo_debug, 2015/03/07, add
+    
+on property:persist.sys.assert.panic=true
+    start backup_log
+
+# There are some duplicate codes   
+
+on property:persist.sys.dump=1
+	write /sys/module/msm_poweroff/parameters/download_mode  1
+	write /proc/otrace_on 7978
+	write /sys/bus/msm_subsys/devices/subsys0/restart_level system 
+	write /sys/bus/msm_subsys/devices/subsys1/restart_level system
+	write /sys/bus/msm_subsys/devices/subsys2/restart_level system
+	write /sys/bus/msm_subsys/devices/subsys3/restart_level system
+	write /proc/sys/kernel/printk "7 6 1 7"
+on property:persist.sys.dump=0
+	write /sys/module/msm_poweroff/parameters/download_mode  0
+	write /proc/otrace_on 0
+	write /sys/bus/msm_subsys/devices/subsys0/restart_level related
+	write /sys/bus/msm_subsys/devices/subsys1/restart_level related
+	write /sys/bus/msm_subsys/devices/subsys2/restart_level related
+	write /sys/bus/msm_subsys/devices/subsys3/restart_level related
+	write /proc/sys/kernel/printk "1 6 1 7" 
+
+on property:persist.sys.powerkeydump=1
+	write  /d/spmi/spmi-0/address 0x843
+	write  /d/spmi/spmi-0/data 0x80
+	write  /d/spmi/spmi-0/address 0x842
+	write  /d/spmi/spmi-0/data 0x01
+	write  /d/spmi/spmi-0/address 0x840
+	write  /d/spmi/spmi-0/data 0x0c
+	write  /d/spmi/spmi-0/address 0x841
+	write  /d/spmi/spmi-0/data 0x07
+
+on property:persist.sys.adddevdiag=1
+	write /sys/devices/virtual/diag/diag/uevent add
+on property:persist.sys.adddevdiag=0
+	write /sys/devices/virtual/diag/diag/uevent remove
+service backup_log /system/xbin/backup_log
+    user root
+    disabled
+    oneshot 
+
+service logcat_loose /system/bin/logcat  -f /cache/admin/apps/android.txt -r10240 -n 5  -v threadtime *:V
+    user root
+    disabled
+    oneshot 
+    
+service logcat_radio /system/bin/logcat -b radio -f /cache/admin/apps/radio.txt -r4096 -n 3  -v threadtime *:V
+    user root
+    disabled
+    oneshot
+
+service logcat_event /system/bin/logcat -b events -f /cache/admin/apps/events.txt -r4096 -n 10  -v threadtime *:V
+    user root
+    disabled
+    oneshot
+    
+service  grab_netlog /system/xbin/tcpdump -i any -p -s 0 -W 2 -C 10 -w /cache/admin/netlog/tcpdump.pcap -Z root
+    user root
+    disabled
+    oneshot
+
+service klogd_loose /system/xbin/klogd -f /cache/admin/kernel/kinfox.txt -n -x -l 7
+    user root
+    disabled
+    oneshot
+    
+on property:sys.oppo.collectlog=true
+   mkdir /cache/admin 0777 system system
+   mkdir /cache/admin/apps 0777 system system
+   mkdir /cache/admin/kernel 0777 system system
+   mkdir /cache/admin/assertlog 0777 system system
+   mkdir /cache/admin/netlog 0777 system system
+   start enabletcpdump
+   start logcat_loose
+   start logcat_radio
+   start logcat_event
+   start grab_netlog
+   start klogd_loose
+   start fingerprintlog
+
+service autochmod /system/bin/sh /autochmod.sh
+    class main
+    user root
+    disabled
+
+service ps /system/bin/sh /autochmod.sh "ps"
+    class main
+    user root
+    disabled
+	oneshot
+service top /system/bin/sh /autochmod.sh "top"
+    class main
+    user root
+    disabled
+	oneshot	
+service server_list /system/bin/sh /autochmod.sh "server"
+    class main
+    user root
+    disabled
+	oneshot	
+service dump_sys /system/bin/sh /autochmod.sh "dump"
+    class main
+    user root
+    disabled
+	oneshot
+service dump_state /system/bin/sh /autochmod.sh "dumpstate"
+    class main
+    user root
+    disabled
+	oneshot	
+service tranfer /system/bin/sh /autochmod.sh "tranfer"
+    class main
+    user root
+    disabled
+	oneshot
+service tranfer_tomb /system/bin/sh /autochmod.sh "tranfer_tombstone"
+    class main
+    user root
+    disabled
+	oneshot
+service tranfer_anr /system/bin/sh /autochmod.sh "tranfer_anr"
+    class main
+    user root
+    disabled
+	oneshot
+service tranfer_assert /system/bin/sh /autochmod.sh "tranfer_assert"
+    class main
+    user root
+    disabled
+	oneshot
+service logcatsdcard /system/bin/sh /autochmod.sh "main"
+    class main
+    user root
+    disabled
+	oneshot	
+service logcatradio /system/bin/sh /autochmod.sh "radio"
+    class main
+    user root
+    disabled
+	oneshot		
+service logcatevent /system/bin/sh /autochmod.sh "event"
+    class main
+    user root
+    disabled
+	oneshot	
+
+service tranfercb /system/bin/sh /autochmod.sh "tranfercb"
+    class main
+    user root
+    disabled
+    oneshot
+#ifndef VENDOR_EDIT 
+#Horn@Swdp.Android.Boot_Charger Storage Power_Timer, 2015/07/03, Modify for [merge klog log into android log]
+#service logcatkernel /system/bin/sh /autochmod.sh "kernel"
+#else /* VENDOR_EDIT */
+service logcatkernel /system/bin/logwrapper /system/bin/sh /autochmod.sh "kernel"
+#endif /* VENDOR_EDIT */ 
+    class main
+    user root
+    disabled
+	oneshot		
+
+service cleanlog /system/bin/sh /autochmod.sh "clean"
+    class main
+    user root
+    disabled
+	oneshot	
+service  tcpdumplog /system/bin/sh /autochmod.sh "tcpdump"
+    class main
+    user root
+    disabled
+	oneshot
+service fingerprintlog /system/bin/sh /autochmod.sh "fingerprint"
+    class main
+    user root
+    disabled
+	oneshot	
+#ifdef VENDOR_EDIT
+#Horn@Swdp.Android.Boot, 2015/03/27, Modify for remove suid of tcpdump . suid bit will be set only when  sys.debug = 1
+#on boot   
+#    chmod 0700 /system/xbin/tcpdump   
+        
+on property:sys.oppo.ctsmode=true
+    start entercts 
+
+on property:sys.oppo.ctsmode=false
+    start exitcts
+
+service entercts /system/bin/sh /autochmod.sh "entercts"
+    class main
+    user root
+    disabled
+    oneshot
+
+service exitcts /system/bin/sh /autochmod.sh "exitcts"
+    class main
+    user root
+    disabled
+    oneshot
+
+service enabletcpdump /system/bin/sh /autochmod.sh "enabletcpdump"
+    class main
+    user root
+    disabled
+    oneshot      
+#endif 
+
+#ifdef VENDOR_EDIT
+#zhengcanjie@framework.oppo_debug, 2015/09/09, add
+service cppstore /system/bin/sh /autochmod.sh "cppstore"
+    class main
+    user root
+    disabled
+    oneshot  
+#endif  VENDOR_EDIT
+
+#ifdef VENDOR_EDIT
+#canjie.zheng@debugToool.OppoLog add for dumpcore 2015/12/07
+service setenforce0 /system/bin/sh /autochmod.sh "setenforce0"
+    class main
+    user root
+    disabled
+    oneshot    
+#endif VENDOR_EDIT
+on property:sys.oppo.collectlog.sdcard=true
+   start logcatsdcard
+   start logcatradio
+   start logcatevent
+   start logcatkernel
+   start tcpdumplog
+   start cppstore
+#endif /* VENDOR_EDIT */
+

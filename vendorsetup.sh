@@ -1,0 +1,2 @@
+add_lunch_combo omni_a37f-eng
+add_lunch_combo omni_a37f-userdebug
